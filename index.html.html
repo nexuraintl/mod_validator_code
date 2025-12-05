@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Ejemplo de código HTML con buenas prácticas de desarrollo web">
+    <meta name="keywords" content="HTML, buenas prácticas, accesibilidad, semántica">
+    <meta name="author" content="Tu Nombre">
+    <title>Ejemplo de Buenas Prácticas HTML</title>
+    
+    <!-- Estilos CSS -->
+    <style>
+        /* Reset básico */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        /* Estilos generales */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+        }
+        
+        /* Encabezado */
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 1rem 0;
+            text-align: center;
+        }
+        
+        /* Navegación */
+        nav {
+            background-color: #34495e;
+            padding: 0.5rem 0;
+        }
+        
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+        }
+        
+        nav li {
+            margin: 0 1rem;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        nav a:hover, nav a:focus {
+            background-color: #1abc9c;
+        }
+        
+        /* Contenido principal */
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+        
+        /* Artículos */
+        article {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        article h2 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+        
+        article p {
+            margin-bottom: 1rem;
+        }
+        
+        /* Barra lateral */
+        aside {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        aside h3 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+        
+        /* Formulario */
+        form {
+            margin-top: 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        
+        button {
+            background-color: #1abc9c;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover, button:focus {
+            background-color: #16a085;
+        }
+        
+        /* Tabla */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        
+        /* Pie de página */
+        footer {
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 2rem;
+        }
+        
+        /* Media queries para responsividad */
+        @media (max-width: 768px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+            
+            nav ul {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            nav li {
+                margin: 0.5rem 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Encabezado con estructura semántica -->
+    <header>
+        <h1>Ejemplo de Buenas Prácticas HTML</h1>
+        <p>Un sitio web bien estructurado y accesible</p>
+    </header>
+    
+    <!-- Navegación principal -->
+    <nav aria-label="Navegación principal">
+        <ul>
+            <li><a href="#inicio" aria-current="page">Inicio</a></li>
+            <li><a href="#acerca">Acerca de</a></li>
+            <li><a href="#servicios">Servicios</a></li>
+            <li><a href="#contacto">Contacto</a></li>
+        </ul>
+    </nav>
+    
+    <!-- Contenido principal -->
+    <main>
+        <!-- Sección de artículos -->
+        <section>
+            <article id="inicio">
+                <h2>Introducción a las Buenas Prácticas</h2>
+                <p>Este documento HTML muestra varias buenas prácticas de desarrollo web que deberías seguir al crear sitios web.</p>
+                <p>Incluye elementos semánticos, accesibilidad, estructuración adecuada y estilos organizados.</p>
+                
+                <h3>Características destacadas</h3>
+                <ul>
+                    <li>Uso de elementos HTML5 semánticos</li>
+                    <li>Implementación de atributos ARIA para accesibilidad</li>
+                    <li>Estructura lógica y jerárquica</li>
+                    <li>Diseño responsivo con media queries</li>
+                    <li>Formularios accesibles con etiquetas adecuadas</li>
+                </ul>
+            </article>
+            
+            <article id="acerca">
+                <h2>Acerca de las Buenas Prácticas</h2>
+                <p>Las buenas prácticas en HTML no solo mejoran la calidad del código, sino que también:</p>
+                
+                <table>
+                    <caption>Ventajas de las buenas prácticas HTML</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Beneficio</th>
+                            <th scope="col">Descripción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Mejor SEO</td>
+                            <td>Los motores de búsqueda pueden entender mejor tu contenido</td>
+                        </tr>
+                        <tr>
+                            <td>Mayor accesibilidad</td>
+                            <td>Personas con discapacidades pueden usar tu sitio</td>
+                        </tr>
+                        <tr>
+                            <td>Mantenibilidad</td>
+                            <td>Es más fácil mantener y actualizar el código</td>
+                        </tr>
+                        <tr>
+                            <td>Compatibilidad</td>
+                            <td>Funciona mejor en diferentes navegadores y dispositivos</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </article>
+            
+            <article id="contacto">
+                <h2>Formulario de Contacto</h2>
+                <form id="contact-form" aria-labelledby="contacto">
+                    <div class="form-group">
+                        <label for="nombre">Nombre completo:</label>
+                        <input type="text" id="nombre" name="nombre" required aria-required="true">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">Correo electrónico:</label>
+                        <input type="email" id="email" name="email" required aria-required="true">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="asunto">Asunto:</label>
+                        <select id="asunto" name="asunto">
+                            <option value="consulta">Consulta general</option>
+                            <option value="soporte">Soporte técnico</option>
+                            <option value="sugerencia">Sugerencia</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mensaje">Mensaje:</label>
+                        <textarea id="mensaje" name="mensaje" rows="5" required aria-required="true"></textarea>
+                    </div>
+                    
+                    <button type="submit">Enviar mensaje</button>
+                </form>
+            </article>
+        </section>
+        
+        <!-- Barra lateral -->
+        <aside>
+            <h3>Recursos Adicionales</h3>
+            <ul>
+                <li><a href="#" target="_blank" rel="noopener noreferrer">Guía de HTML5</a></li>
+                <li><a href="#" target="_blank" rel="noopener noreferrer">Pautas de accesibilidad WCAG</a></li>
+                <li><a href="#" target="_blank" rel="noopener noreferrer">Validación de código HTML</a></li>
+            </ul>
+            
+            <h3>Enlaces útiles</h3>
+            <ul>
+                <li><a href="#inicio">Volver al inicio</a></li>
+                <li><a href="#acerca">Más información</a></li>
+                <li><a href="#contacto">Contactarnos</a></li>
+            </ul>
+        </aside>
+    </main>
+    
+    <!-- Pie de página -->
+    <footer>
+        <p>&copy; 2023 Ejemplo de Buenas Prácticas HTML. Todos los derechos reservados.</p>
+        <p><a href="#politica-privacidad" style="color: #1abc9c;">Política de privacidad</a> | <a href="#terminos" style="color: #1abc9c;">Términos de uso</a></p>
+    </footer>
+    
+    <!-- Scripts al final del body para mejor rendimiento -->
+    <script>
+        // Ejemplo de JavaScript no intrusivo
+        document.addEventListener('DOMContentLoaded', function() {
+            const contactForm = document.getElementById('contact-form');
+            
+            if (contactForm) {
+                contactForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    alert('Formulario enviado (esto es una demostración)');
+                    // En un caso real, aquí enviarías los datos al servidor
+                });
+            }
+        });
+    </script>
+</body>
+</html>
