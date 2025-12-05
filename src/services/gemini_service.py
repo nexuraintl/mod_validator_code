@@ -34,7 +34,7 @@ def call_gemini(prompt: str, timeout: int = 80) -> str:
             }
         ],
         "generationConfig": {
-            "temperature": 0.1,  # Baja temperatura para mayor consistencia
+            "temperature": 0.0,
             "maxOutputTokens": 6000,
             "responseMimeType": "application/json"  #Forzar JSON puro
         }

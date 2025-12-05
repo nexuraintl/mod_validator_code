@@ -1,10 +1,9 @@
-# src/utils/json_tools.py
 import json
 import re
 import logging
 from typing import Any, Dict, Optional, Union
 
-# Regex para eliminar fences de Markdown
+# Regex para eliminar comillas o caracteres de Markdown
 MD_FENCE = re.compile(r"```(?:json)?", flags=re.IGNORECASE)
 
 # Regex para eliminar comentarios /* */
@@ -16,7 +15,9 @@ RE_KEY_NO_QUOTES = re.compile(r'(\n\s*)([A-Za-z_][A-Za-z0-9_]*)\s*:')
 
 
 def strip_md_fences(text: str) -> str:
-    """Elimina fences como ```json ... ``` sin destruir contenido."""
+    """
+    Elimina caracteres como ```json ... ``` sin destruir contenido.
+    """
     return MD_FENCE.sub("", text)
 
 
@@ -117,7 +118,7 @@ def extract_first_json(text: str) -> Optional[str]:
 
 def repair_json(blob: str) -> str:
     """
-    Repara errores comunes generados por LLM.
+    Repara errores comunes generados por IA.
     """
     blob = RE_TRAILING_COMMA.sub(r"\1", blob)
     blob = RE_KEY_NO_QUOTES.sub(r'\1"\2":', blob)
@@ -129,19 +130,8 @@ def repair_json(blob: str) -> str:
 
 def parse_llm_json(text: str, return_default: bool = True) -> Union[Dict[str, Any], Any]:
     """
-    Parser robusto para texto devuelto por un LLM. Intenta extraer un bloque JSON,
-    limpiarlo, repararlo y parsearlo.
-    
-    Args:
-        text: Texto crudo de la respuesta del LLM
-        return_default: Si es True, devuelve un dict por defecto en caso de error.
-                       Si es False, lanza ValueError.
-    
-    Returns:
-        Dict parseado o dict por defecto con errores vacíos
-    
-    Raises:
-        ValueError: Si return_default=False y no se puede parsear
+    Parser robusto para texto devuelto por IA. Intenta extraer un bloque JSON,
+    limpiarlo, repararlo y parsearlo. 
     """
     if not isinstance(text, str) or not text.strip():
         msg = "Respuesta vacía del modelo"
@@ -174,11 +164,17 @@ def parse_llm_json(text: str, return_default: bool = True) -> Union[Dict[str, An
     for candidate in attempts:
         try:
             parsed = json.loads(candidate)
+            
+            #  TOMAR EL PRIMER EEMENTO DE UNA LISTA SI ES NECESARIO
+            if isinstance(parsed, list) and len(parsed) > 0:
+                parsed = parsed[0]
+            
             # Asegurar estructura mínima esperada
             if isinstance(parsed, dict):
                 parsed.setdefault("errores", [])
                 parsed.setdefault("resumen", "Análisis completado")
                 parsed.setdefault("archivo", "desconocido")
+                parsed.setdefault("sugerencias", [])
             return parsed
         except json.JSONDecodeError:
             continue

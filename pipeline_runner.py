@@ -1,6 +1,7 @@
 import os
 import requests
 import sys
+from typing import Optional
 
 # Añadir el directorio actual al path para importar módulos locales
 sys.path.append(os.getcwd())
@@ -21,15 +22,58 @@ COMMIT_ID = os.environ.get("BUILD_SOURCEVERSION")
 EXTENSIONS_PERMITIDAS = (".py", ".js", ".ts", ".php", ".java", ".html", ".css", ".sql")
 
 
+def get_last_commit_id() -> Optional[str]:
+    """
+    Obtiene el último commit del repositorio.
+    """
+    if not all([AZURE_PAT, ORG_URL, PROJECT, REPO_ID]):
+        print("##[warning] Variables de Azure DevOps no configuradas")
+        return None
+
+    # API de azure que listar commits ordenados por fecha descendente
+    url = f"{ORG_URL}{PROJECT}/_apis/git/repositories/{REPO_ID}/commits?api-version=7.0&$top=1"
+
+    try:
+        resp = requests.get(url, auth=("", AZURE_PAT), timeout=30)
+        if resp.status_code != 200:
+            print(
+                f"##[error] Error obteniendo último commit ({resp.status_code}): {resp.text}"
+            )
+            return None
+
+        value = resp.json().get("value", [])
+        if not value:
+            print("##[warning] No se encontraron commits en el repositorio")
+            return None
+
+        commit_id= value[0].get("commitId")
+        print(f"último commit encontrado: {commit_id[:8]}")
+        return commit_id
+
+    
+    except requests.Timeout:
+        print("##[error] Timeout obteniendo último commit")
+        return None
+    except Exception as e:
+        print(f"##[error] Excepción en get_last_commit_id: {e}")
+        return None
+
+
 def get_changed_files():
     """
-    Obtiene la lista de archivos cambiados desde Azure DevOps.
+    Obtiene la lista de archivos cambiados del último commit del repo.
     """
-    if not all([AZURE_PAT, ORG_URL, PROJECT, REPO_ID, COMMIT_ID]):
+    # Usamos el último commit global, no el del pipeline
+    last_commit_id = get_last_commit_id()
+    if not last_commit_id:
+        print("##[error] No se pudo obtener el último commit del repositorio")
+        return []
+
+    if not all([AZURE_PAT, ORG_URL, PROJECT, REPO_ID]):
         print("##[warning] Variables de Azure DevOps no configuradas completamente")
         return []
 
-    url = f"{ORG_URL}{PROJECT}/_apis/git/repositories/{REPO_ID}/commits/{COMMIT_ID}/changes?api-version=7.0"
+    url = f"{ORG_URL}{PROJECT}/_apis/git/repositories/{REPO_ID}/commits/{last_commit_id}/changes?api-version=7.0"
 
     try:
         response = requests.get(url, auth=("", AZURE_PAT), timeout=30)
@@ -42,7 +86,6 @@ def get_changed_files():
         files = []
         for change in response.json().get("changes", []):
             item = change.get("item", {})
-            # Filtra solo archivos editados/agregados (no borrados)
             if (
                 item.get("gitObjectType") == "blob"
                 and change.get("changeType") != "delete"
@@ -59,7 +102,7 @@ def get_changed_files():
 
 def analyze_file(file_path_azure):
     """
-    Lee archivo, arma prompt y llama a Gemini.
+    Lee archivo, pasa el prompt y llama a Gemini.
     """
     # Convertir path de Azure a local
     local_path = file_path_azure.lstrip("/")
@@ -84,7 +127,7 @@ def analyze_file(file_path_azure):
         # 4. Llamar a Gemini
         resultado = call_gemini(prompt=full_prompt)
 
-        # Parsear resultado (JSON)
+        # Parsear resultado 
         print(f"   Parseando respuesta...")
         resultado = parse_llm_json(resultado, return_default=True)
 
@@ -105,8 +148,7 @@ def analyze_file(file_path_azure):
 
 def print_results(resultados):
     """
-    Imprime resultados en consola Azure DevOps
-    Formato json:
+    Imprime resultados en consola Azure DevOps 
     """
     print("\n" + "=" * 80)
     print("Analisis:")
@@ -209,8 +251,6 @@ def main():
     # Imprimir resultados
     if resultados:
         total_errores = print_results(resultados)
-
-
 
 
 if __name__ == "__main__":
