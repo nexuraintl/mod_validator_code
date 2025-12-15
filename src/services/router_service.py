@@ -8,7 +8,7 @@ PLANTILLA_PATH = PROMPT_DIR / "plantilla.txt"
 PLANTILLA = PLANTILLA_PATH.read_text(encoding="utf-8")
 
 
-def build_prompt(texto: str, categoria: str = "", ext: str = "") -> str:
+def build_prompt(texto: str, categoria: str = "") -> str:
     return PLANTILLA.format(
         texto=texto.strip(),
         categoria=categoria or ""

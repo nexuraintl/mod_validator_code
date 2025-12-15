@@ -13,15 +13,6 @@ def call_gemini(prompt: str, timeout: int = 80) -> str:
     """
     Llama a Gemini API usando REST y fuerza respuesta JSON pura
     
-    Args:
-        prompt: Prompt completo a enviar
-        timeout: Timeout en segundos
-    
-    Returns:
-        str: Respuesta de Gemini en formato JSON
-    
-    Raises:
-        GeminiError: Si hay error en la API
     """
     if not GEMINI_API_KEY:
         raise GeminiError("GEMINI_API_KEY no configurada en variables de entorno")
@@ -34,9 +25,9 @@ def call_gemini(prompt: str, timeout: int = 80) -> str:
             }
         ],
         "generationConfig": {
-            "temperature": 0.0,
-            "maxOutputTokens": 6000,
-            "responseMimeType": "application/json"  #Forzar JSON puro
+            "temperature": 0.0, 
+            "maxOutputTokens": 10000,
+            "responseMimeType": "application/json"  
         }
     }
     
