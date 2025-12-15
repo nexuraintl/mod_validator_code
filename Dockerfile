@@ -20,4 +20,5 @@ RUN echo "Contenido1 de /app:" && ls -l /app
 EXPOSE 8080
 
 # Comando para ejecutar la app usando Gunicorn
-CMD ["python", "pipeline_runner.py"]
+ENV PORT=8080
+CMD ["gunicorn", "-b", "0.0.0.0:8080", "app:app"]

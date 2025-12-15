@@ -1,65 +1,107 @@
 trigger:
   branches:
     include:
-      - main
-      - dev
       - qa
-      - feature/*
-  paths:
-    exclude:
-      - README.md
-      - .gitignore
-      - docs/*
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: ubuntu-latest
 
 variables:
-- group: validator_variables
+  GIT_USER: "santiago_valenzuela"
+  GIT_EMAIL: "svalenzuela@nexura.com"
+  GITHUB_ORG: "nexuraintl"
+  GITHUB_REPO: "mod_w3c"
+
+  # Recomendado: define esto en Library/Variables
+  # GCP_PROJECT_ID
+  # GCP_REGION (ej: us-central1)
+  # AR_REPO (ej: validator-repo)
+  # CLOUD_RUN_SERVICE (ej: mod-validator)
+  IMAGE_NAME: "mod-w3c"
 
 steps:
-  # Checkout con historial limitado para commits
   - checkout: self
-    fetchDepth: 2
-    displayName: 'Obtener código fuente'
+    clean: true
+    persistCredentials: true
 
-  # Configurar Python
-  - task: UsePythonVersion@0
-    displayName: 'Configurar Python 3.11'
-    inputs:
-      versionSpec: '3.11'
-      addToPath: true
-
-  # Instalar dependencias
+  # 1) Validar rama
   - script: |
-      python --version
-      pip --version
-      pip install --upgrade pip
-      pip install requests python-dotenv
-    displayName: 'Instalar dependencias Python'
+      echo "Validando rama..."
+      if [ "$(Build.SourceBranch)" != "refs/heads/qa" ]; then
+        echo "❌ Solo la rama 'qa' puede ejecutar este pipeline."
+        exit 1
+      fi
+    displayName: "Validar rama origen"
 
-  # Ejecutar análisis de código con Gemini
+  # 2) Configurar Git
   - script: |
-      echo "Iniciando análisis de código..."
-      python pipeline_runner.py
+      git config --global user.name "$(GIT_USER)"
+      git config --global user.email "$(GIT_EMAIL)"
+    displayName: "Configurar Git"
+
+  # 3) Sincronizar con GitHub
+  - script: |
+      echo "Deshabilitando shallow clone..."
+      git fetch --unshallow || true
+      git fetch --all
+
+      echo "Configurando remoto de GitHub..."
+      git remote add github https://$(GITHUB_TOKEN_NEXURAINTL)@github.com/$(GITHUB_ORG)/$(GITHUB_REPO).git \
+        || git remote set-url github https://$(GITHUB_TOKEN_NEXURAINTL)@github.com/$(GITHUB_ORG)/$(GITHUB_REPO).git
+
+      echo "Verificando HEAD..."
+      git log -1 --oneline
+
+      echo "Empujando hacia GitHub (qa)..."
+      git push github HEAD:qa --force -v
     env:
-      # Variable del grupo (API Key de Gemini)
-      GEMINI_API_KEY: $(GEMINI_API_KEY)
-      # Token automático de Azure DevOps
-      AZURE_PAT: $(System.AccessToken)
-      # Variables del sistema (automáticas)
-      SYSTEM_TEAMFOUNDATIONCOLLECTIONURI: $(System.TeamFoundationCollectionUri)
-      SYSTEM_TEAMPROJECT: $(System.TeamProject)
-      BUILD_REPOSITORY_ID: $(Build.Repository.ID)
-      BUILD_SOURCEVERSION: $(Build.SourceVersion)
-    displayName: 'Ejecutar analisis IA'
-    continueOnError: true  # Continúa incluso si hay errores
+      GITHUB_TOKEN_NEXURAINTL: $(GITHUB_TOKEN_NEXURAINTL)
+    displayName: "Sincronizar con GitHub"
 
-  # Publicar resultados como artefacto (opcional)
-  - task: PublishBuildArtifacts@1
-    displayName: 'Publicar logs del análisis'
-    condition: always()
-    inputs:
-      PathtoPublish: '$(System.DefaultWorkingDirectory)'
-      ArtifactName: 'analisis-codigo-logs'
-      publishLocation: 'Container'
+  # 4) Instalar gcloud
+  - script: |
+      sudo apt-get update
+      sudo apt-get install -y apt-transport-https ca-certificates gnupg curl
+      curl -sSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
+      echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
+        | sudo tee /etc/apt/sources.list.d/google-cloud-sdk.list
+      sudo apt-get update
+      sudo apt-get install -y google-cloud-cli
+    displayName: "Instalar Google Cloud SDK"
+
+  # 5) Auth GCP (Service Account JSON)
+  - script: |
+      echo '$(GCP_SA_KEY)' > sa.json
+      gcloud auth activate-service-account --key-file=sa.json
+      gcloud config set project $(GCP_PROJECT_ID)
+      gcloud config set run/region $(GCP_REGION)
+    env:
+      GCP_SA_KEY: $(GCP_SA_KEY)
+    displayName: "Autenticarse en GCP"
+
+  # 6) Login Docker -> Artifact Registry
+  - script: |
+      gcloud auth configure-docker $(GCP_REGION)-docker.pkg.dev -q
+    displayName: "Configurar Docker para Artifact Registry"
+
+  # 7) Build + Push
+  - script: |
+      IMAGE_URI="$(GCP_REGION)-docker.pkg.dev/$(GCP_PROJECT_ID)/$(AR_REPO)/$(IMAGE_NAME):$(Build.SourceVersion)"
+      echo "Construyendo: $IMAGE_URI"
+      docker build -t "$IMAGE_URI" .
+      docker push "$IMAGE_URI"
+      echo "##vso[task.setvariable variable=IMAGE_URI]$IMAGE_URI"
+    displayName: "Build y Push Docker"
+
+  # 8) Deploy Cloud Run (inyecta secretos)
+  - script: |
+      gcloud run deploy $(CLOUD_RUN_SERVICE) \
+        --image "$(IMAGE_URI)" \
+        --platform managed \
+        --region $(GCP_REGION) \
+        --allow-unauthenticated \
+        --set-env-vars AZURE_PAT="$(VALIDADOR_PAT)",GEMINI_API_KEY="$(GEMINI_API_KEY)"
+    env:
+      VALIDADOR_PAT: $(VALIDADOR_PAT)
+      GEMINI_API_KEY: $(GEMINI_API_KEY)
+    displayName: "Deploy a Cloud Run"
