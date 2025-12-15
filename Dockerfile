@@ -21,4 +21,4 @@ EXPOSE 8080
 
 # Comando para ejecutar la app usando Gunicorn
 ENV PORT=8080
-CMD ["gunicorn", "-b", "0.0.0.0:8080", "app:app"]
+CMD ["gunicorn", "app:app", "-b", "0.0.0.0:8080", "--workers", "1", "--threads", "8", "--timeout", "180", "--graceful-timeout", "30", "--keep-alive", "5"]
