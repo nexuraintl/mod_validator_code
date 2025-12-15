@@ -130,5 +130,8 @@ steps:
         --platform managed \
         --region $(GCP_REGION) \
         --allow-unauthenticated \
-        --set-env-vars AZURE_PAT="$(VALIDADOR_PAT)",GEMINI_API_KEY="$(GEMINI_API_KEY)"
+        --set-env-vars AZURE_PAT="$VALIDADOR_PAT",GEMINI_API_KEY="$GEMINI_API_KEY"
+    env:
+      VALIDADOR_PAT: $(VALIDADOR_PAT)
+      GEMINI_API_KEY: $(GEMINI_API_KEY)
     displayName: "Deploy a Cloud Run"
