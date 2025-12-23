@@ -46,7 +46,7 @@ steps:
 
       echo "Configurando remoto GitHub..."
       git remote remove github 2>/dev/null || true
-      git remote add github "https://${GITHUB_TOKEN_NEXURAINTL}@github.com/$(GITHUB_ORG)/$(GITHUB_REPO).git"
+      git remote add github "https://${GITHUB_NEXURAINTL}@github.com/$(GITHUB_ORG)/$(GITHUB_REPO).git"
 
       echo "Remotos configurados:"
       git remote -v
@@ -60,5 +60,5 @@ steps:
       echo "Verificando ramas remotas en GitHub..."
       git ls-remote --heads github
     env:
-      GITHUB_TOKEN_NEXURAINTL: $(GITHUB_TOKEN_NEXURAINTL)
+      GITHUB_TOKEN_NEXURAINTL: $(GITHUB_NEXURAINTL)
     displayName: "Mirror Azure -> GitHub (qa)"
