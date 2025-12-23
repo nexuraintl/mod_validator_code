@@ -1,65 +1,64 @@
+# .azure-pipelines.yml
+# Sincroniza Azure DevOps (rama qa) -> GitHub (rama qa)
+
 trigger:
   branches:
     include:
-      - main
-      - dev
       - qa
-      - feature/*
-  paths:
-    exclude:
-      - README.md
-      - .gitignore
-      - docs/*
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: ubuntu-latest
 
 variables:
-- group: validator_variables
+  GIT_USER: "santiago_valenzuela" #Nombre del usuario en Azure
+  GIT_EMAIL: "svalenzuela@nexura.com" #Correo del Azure
+  GITHUB_ORG: "nexuraintl" #Nombre del usuario dueño de la repo en GitHub
+  GITHUB_REPO: "mod_validator_code" #Nombre del Repo dueño de la repo en GitHub
 
 steps:
-  # Checkout con historial limitado para commits
   - checkout: self
-    fetchDepth: 2
-    displayName: 'Obtener código fuente'
+    clean: true
+    persistCredentials: true  # importante para no perder auth del repo Azure
 
-  # Configurar Python
-  - task: UsePythonVersion@0
-    displayName: 'Configurar Python 3.11'
-    inputs:
-      versionSpec: '3.11'
-      addToPath: true
-
-  # Instalar dependencias
+  # 1️⃣ Validar rama
   - script: |
-      python --version
-      pip --version
-      pip install --upgrade pip
-      pip install requests python-dotenv
-    displayName: 'Instalar dependencias Python'
+      echo "Validando rama..."
+      echo "Build.SourceBranchName = '$(Build.SourceBranchName)'"
+      echo "Build.SourceBranch = '$(Build.SourceBranch)'"
+      if [ "$(Build.SourceBranch)" != "refs/heads/qa" ]; then
+        echo "❌ Solo la rama 'qa' puede sincronizarse con GitHub."
+        exit 1
+      fi
+    displayName: "Validar rama origen"
 
-  # Ejecutar análisis de código con Gemini
+  # 2️⃣ Configurar Git
   - script: |
-      echo "Iniciando análisis de código..."
-      python pipeline_runner.py
+      git config --global user.name "$(GIT_USER)"
+      git config --global user.email "$(GIT_EMAIL)"
+    displayName: "Configurar Git"
+
+  # 3️⃣ Sincronizar con GitHub
+  - script: |
+      set -e
+      echo "Deshabilitando shallow clone..."
+      git fetch --unshallow || true
+      git fetch --all
+
+      echo "Configurando remoto GitHub..."
+      git remote remove github 2>/dev/null || true
+      git remote add github "https://${GITHUB_TOKEN_NEXURAINTL}@github.com/$(GITHUB_ORG)/$(GITHUB_REPO).git"
+
+      echo "Remotos configurados:"
+      git remote -v
+
+      echo "Verificando HEAD..."
+      git log -1 --oneline
+
+      echo "Push FORZADO a GitHub (qa)..."
+      git push github HEAD:qa --force -v
+
+      echo "Verificando ramas remotas en GitHub..."
+      git ls-remote --heads github
     env:
-      # Variable del grupo (API Key de Gemini)
-      GEMINI_API_KEY: $(GEMINI_API_KEY)
-      # Token automático de Azure DevOps
-      AZURE_PAT: $(System.AccessToken)
-      # Variables del sistema (automáticas)
-      SYSTEM_TEAMFOUNDATIONCOLLECTIONURI: $(System.TeamFoundationCollectionUri)
-      SYSTEM_TEAMPROJECT: $(System.TeamProject)
-      BUILD_REPOSITORY_ID: $(Build.Repository.ID)
-      BUILD_SOURCEVERSION: $(Build.SourceVersion)
-    displayName: 'Ejecutar analisis IA'
-    continueOnError: true  # Continúa incluso si hay errores
-
-  # Publicar resultados como artefacto (opcional)
-  - task: PublishBuildArtifacts@1
-    displayName: 'Publicar logs del análisis'
-    condition: always()
-    inputs:
-      PathtoPublish: '$(System.DefaultWorkingDirectory)'
-      ArtifactName: 'analisis-codigo-logs'
-      publishLocation: 'Container'
+      GITHUB_TOKEN_NEXURAINTL: $(GITHUB_TOKEN_NEXURAINTL)
+    displayName: "Mirror Azure -> GitHub (qa)"
