@@ -5,6 +5,7 @@ trigger:
   branches:
     include:
       - qa
+      - main
 
 pool:
   vmImage: ubuntu-latest
