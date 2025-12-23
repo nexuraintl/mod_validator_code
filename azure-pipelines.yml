@@ -11,10 +11,20 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  GIT_USER: "santiago_valenzuela" #Nombre del usuario en Azure
-  GIT_EMAIL: "svalenzuela@nexura.com" #Correo del Azure
-  GITHUB_ORG: "nexuraintl" #Nombre del usuario dueño de la repo en GitHub
-  GITHUB_REPO: "mod_validator_code" #Nombre del Repo dueño de la repo en GitHub
+- group: github-secrets
+
+- name: GIT_USER
+  value: "santiago_valenzuela"
+
+- name: GIT_EMAIL
+  value: "svalenzuela@nexura.com"
+
+- name: GITHUB_ORG
+  value: "nexuraintl"
+
+- name: GITHUB_REPO
+  value: "mod_validator_code"
+
 
 steps:
   - checkout: self
@@ -61,5 +71,5 @@ steps:
       echo "Verificando ramas remotas en GitHub..."
       git ls-remote --heads github
     env:
-      GITHUB_TOKEN_NEXURAINTL: $(GITHUB_TOKEN_NEXURAINTL)
+      GITHUB_TOKEN_NEXURAINTL: $(GITHUB_NEXURAINTL)
     displayName: "Mirror Azure -> GitHub (qa)"
