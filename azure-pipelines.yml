@@ -1,3 +1,6 @@
+# .azure-pipelines.yml
+# Sincroniza Azure DevOps (rama qa) -> GitHub (rama qa)
+
 trigger:
   branches:
     include:
@@ -7,131 +10,50 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-- group: gcp-secrets
-
-# Variables "normales"
-- name: GIT_USER
-  value: "santiago_valenzuela"
-
-- name: GIT_EMAIL
-  value: "svalenzuela@nexura.com"
-
-- name: GITHUB_ORG
-  value: "nexuraintl"
-
-- name: GITHUB_REPO
-  value: "mod_w3c"
-
-# GCP Variables
-- name: GCP_PROJECT_ID
-  value: "pre-qa-functions"
-
-- name: GCP_REGION
-  value: "us-central1"
-
-- name: CLOUD_RUN_SERVICE
-  value: "qa-ia-validador"
-
-# Artifact Registry 
-- name: AR_REPO
-  value: "cloud-run-source-deploy"
-
-- name: IMAGE_NAME
-  value: "mod-w3c"
+  GIT_USER: "santiago_valenzuela" #Nombre del usuario en Azure
+  GIT_EMAIL: "svalenzuela@nexura.com" #Correo del Azure
+  GITHUB_ORG: "nexuraintl" #Nombre del usuario dueño de la repo en GitHub
+  GITHUB_REPO: "mod_validator_code" #Nombre del Repo dueño de la repo en GitHub
 
 steps:
   - checkout: self
     clean: true
-    persistCredentials: true
+    persistCredentials: true  # importante para no perder auth del repo Azure
 
-  # 1) Validar rama
+  # 1️⃣ Validar rama
   - script: |
       echo "Validando rama..."
-      echo "Build.SourceBranch = $(Build.SourceBranch)"
+      echo "Build.SourceBranchName = '$(Build.SourceBranchName)'"
+      echo "Build.SourceBranch = '$(Build.SourceBranch)'"
       if [ "$(Build.SourceBranch)" != "refs/heads/qa" ]; then
-        echo "❌ Solo la rama 'qa' puede ejecutar este pipeline."
+        echo "❌ Solo la rama 'qa' puede sincronizarse con GitHub."
         exit 1
       fi
     displayName: "Validar rama origen"
 
-  # 2) Configurar Git
+  # 2️⃣ Configurar Git
   - script: |
       git config --global user.name "$(GIT_USER)"
       git config --global user.email "$(GIT_EMAIL)"
     displayName: "Configurar Git"
 
-  # 3) Sincronizar con GitHub 
+  # 3️⃣ Sincronizar con GitHub
   - script: |
-      set -e
-
       echo "Deshabilitando shallow clone..."
       git fetch --unshallow || true
       git fetch --all
 
       echo "Configurando remoto de GitHub..."
-      git remote remove github 2>/dev/null || true
-
-      # Opción A: usar el token como variable de entorno (Bash)
-      # Nota: para evitar problemas con caracteres especiales, también podrías usar un token tipo fine-grained.
-      git remote add github "https://${GITHUB_TOKEN_NEXURAINTL}@github.com/$(GITHUB_ORG)/$(GITHUB_REPO).git"
+      git remote add github https://$(GITHUB_TOKEN_NEXURAINTL)@github.com/$(GITHUB_ORG)/$(GITHUB_REPO).git || git remote set-url github https://$(GITHUB_TOKEN_NEXURAINTL)@github.com/$(GITHUB_ORG)/$(GITHUB_REPO).git
 
       echo "Verificando HEAD..."
       git log -1 --oneline
 
-      echo "Empujando hacia GitHub (qa)..."
+      echo "Empujando historial completo hacia rama qa (GitHub)..."
       git push github HEAD:qa --force -v
+
+      echo "Verificando ramas remotas..."
+      git ls-remote github
     env:
       GITHUB_TOKEN_NEXURAINTL: $(GITHUB_TOKEN_NEXURAINTL)
-    continueOnError: true
-    displayName: "Sincronizar con GitHub (opcional)"
-
-  # 4) Instalar Google Cloud SDK
-  - script: |
-      set -e
-      sudo apt-get update
-      sudo apt-get install -y apt-transport-https ca-certificates gnupg curl
-      curl -sSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
-      echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
-        | sudo tee /etc/apt/sources.list.d/google-cloud-sdk.list
-      sudo apt-get update
-      sudo apt-get install -y google-cloud-cli
-    displayName: "Instalar Google Cloud SDK"
-
-  # 5) Auth GCP (Service Account JSON)
-  - script: |
-      set -e
-      echo '$(GCP_SA_KEY)' > sa.json
-      gcloud auth activate-service-account --key-file=sa.json
-      gcloud config set project $(GCP_PROJECT_ID)
-      gcloud config set run/region $(GCP_REGION)
-    displayName: "Autenticarse en GCP"
-
-  # 6) Login Docker 
-  - script: |
-      set -e
-      gcloud auth configure-docker $(GCP_REGION)-docker.pkg.dev -q
-    displayName: "Configurar Docker para Artifact Registry"
-
-  # 7) Build y Push imagen Docker
-  - script: |
-      set -e
-      IMAGE_URI="$(GCP_REGION)-docker.pkg.dev/$(GCP_PROJECT_ID)/$(AR_REPO)/$(IMAGE_NAME):$(Build.SourceVersion)"
-      echo "Construyendo: $IMAGE_URI"
-      docker build -t "$IMAGE_URI" .
-      docker push "$IMAGE_URI"
-      echo "##vso[task.setvariable variable=IMAGE_URI]$IMAGE_URI"
-    displayName: "Build y Push Docker"
-
-  # 8) Deploy Cloud Run 
-  - script: |
-      set -e
-      gcloud run deploy $(CLOUD_RUN_SERVICE) \
-        --image "$(IMAGE_URI)" \
-        --platform managed \
-        --region $(GCP_REGION) \
-        --allow-unauthenticated \
-        --set-env-vars AZURE_PAT="$VALIDADOR_PAT",GEMINI_API_KEY="$GEMINI_API_KEY"
-    env:
-      VALIDADOR_PAT: $(VALIDADOR_PAT)
-      GEMINI_API_KEY: $(GEMINI_API_KEY)
-    displayName: "Deploy a Cloud Run"
+    displayName: "Mirror Azure -> GitHub (qa)"
