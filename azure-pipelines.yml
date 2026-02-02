@@ -1,30 +1,19 @@
 # .azure-pipelines.yml
-# Sincroniza Azure DevOps (rama qa) -> GitHub (rama qa)
+# Sincroniza Azure DevOps (rama main) -> GitHub (rama main)
 
 trigger:
   branches:
     include:
-          - qa
-          - main
+      - main
 
 pool:
   vmImage: ubuntu-latest
 
 variables:
-- group: github-secrets
-
-- name: GIT_USER
-  value: "santiago_valenzuela"
-
-- name: GIT_EMAIL
-  value: "svalenzuela@nexura.com"
-
-- name: GITHUB_ORG
-  value: "nexuraintl"
-
-- name: GITHUB_REPO
-  value: "mod_validator_code"
-
+  GIT_USER: "santiago_valenzuela" #Nombre del usuario en Azure
+  GIT_EMAIL: "svalenzuela@nexura.com" #Correo del Azure
+  GITHUB_ORG: "nexuraintl" #Nombre del usuario dueño de la repo en GitHub
+  GITHUB_REPO: "mod_validator_code" #Nombre del Repo dueño de la repo en GitHub
 
 steps:
   - checkout: self
@@ -36,8 +25,8 @@ steps:
       echo "Validando rama..."
       echo "Build.SourceBranchName = '$(Build.SourceBranchName)'"
       echo "Build.SourceBranch = '$(Build.SourceBranch)'"
-      if [ "$(Build.SourceBranch)" != "refs/heads/qa" ]; then
-        echo "❌ Solo la rama 'qa' puede sincronizarse con GitHub."
+      if [ "$(Build.SourceBranch)" != "refs/heads/main" ]; then
+        echo "❌ Solo la rama 'main' puede sincronizarse con GitHub."
         exit 1
       fi
     displayName: "Validar rama origen"
@@ -50,26 +39,22 @@ steps:
 
   # 3️⃣ Sincronizar con GitHub
   - script: |
-      set -e
       echo "Deshabilitando shallow clone..."
       git fetch --unshallow || true
       git fetch --all
 
-      echo "Configurando remoto GitHub..."
-      git remote remove github 2>/dev/null || true
-      git remote add github "https://${GITHUB_TOKEN_NEXURAINTL}@github.com/$(GITHUB_ORG)/$(GITHUB_REPO).git"
-
-      echo "Remotos configurados:"
-      git remote -v
+      echo "Configurando remoto de GitHub..."
+      git remote add github https://$(GITHUB_TOKEN_NEXURAINTL)@github.com/$(GITHUB_ORG)/$(GITHUB_REPO).git || git remote set-url github https://$(GITHUB_TOKEN_NEXURAINTL)@github.com/$(GITHUB_ORG)/$(GITHUB_REPO).git
 
       echo "Verificando HEAD..."
       git log -1 --oneline
 
-      echo "Push FORZADO a GitHub (qa)..."
-      git push github HEAD:qa --force -v
+      echo "Empujando historial completo hacia rama main (GitHub)..."
+      git push github HEAD:main --force -v
 
-      echo "Verificando ramas remotas en GitHub..."
-      git ls-remote --heads github
+      echo "Verificando ramas remotas..."
+      git ls-remote github
     env:
-      GITHUB_TOKEN_NEXURAINTL: $(GITHUB_NEXURAINTL)
-    displayName: "Mirror Azure -> GitHub (qa)"
+      GITHUB_TOKEN_NEXURAINTL: $(GITHUB_TOKEN_NEXURAINTL)
+    displayName: "Sincronizar con GitHub"
+    
