@@ -5,7 +5,6 @@ trigger:
   branches:
     include:
       - qa
-      - main
 
 pool:
   vmImage: ubuntu-latest
@@ -40,26 +39,22 @@ steps:
 
   # 3️⃣ Sincronizar con GitHub
   - script: |
-      set -e
       echo "Deshabilitando shallow clone..."
       git fetch --unshallow || true
       git fetch --all
 
-      echo "Configurando remoto GitHub..."
-      git remote remove github 2>/dev/null || true
-      git remote add github "https://${GITHUB_NEXURAINTL}@github.com/$(GITHUB_ORG)/$(GITHUB_REPO).git"
-
-      echo "Remotos configurados:"
-      git remote -v
+      echo "Configurando remoto de GitHub..."
+      git remote add github https://$(GITHUB_TOKEN_NEXURAINTL)@github.com/$(GITHUB_ORG)/$(GITHUB_REPO).git || git remote set-url github https://$(GITHUB_TOKEN_NEXURAINTL)@github.com/$(GITHUB_ORG)/$(GITHUB_REPO).git
 
       echo "Verificando HEAD..."
       git log -1 --oneline
 
-      echo "Push FORZADO a GitHub (qa)..."
+      echo "Empujando historial completo hacia rama qa (GitHub)..."
       git push github HEAD:qa --force -v
 
-      echo "Verificando ramas remotas en GitHub..."
-      git ls-remote --heads github
+      echo "Verificando ramas remotas..."
+      git ls-remote github
     env:
-      GITHUB_TOKEN_NEXURAINTL: $(GITHUB_NEXURAINTL)
-    displayName: "Mirror Azure -> GitHub (qa)"
+      GITHUB_TOKEN_NEXURAINTL: $(GITHUB_TOKEN_NEXURAINTL)
+    displayName: "Sincronizar con GitHub"
+    
