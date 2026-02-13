@@ -3,7 +3,8 @@ import os
 import requests
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-URL = "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent"
+MODEL_NAME = "gemini-2.0-flash"
+URL = "https://generativelanguage.googleapis.com/v1/models/{MODEL_NAME}:generateContent?key= {GEMINI_API_KEY}"
 
 class GeminiError(RuntimeError):
     pass
