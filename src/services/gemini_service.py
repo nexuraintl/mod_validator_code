@@ -6,7 +6,7 @@ import requests
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 MODEL_NAME = "gemini-2.0-flash"
 # Usamos un f-string correcto para el modelo
-URL = f"https://generativelanguage.googleapis.com/v1/models/{MODEL_NAME}:generateContent"
+URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL_NAME}:generateContent"
 
 class GeminiError(RuntimeError):
     pass
@@ -24,7 +24,7 @@ def call_gemini(prompt: str, timeout: int = 80) -> str:
         "generationConfig": {
             "temperature": 0.0, 
             "maxOutputTokens": 10000,
-            "response_mime_type": "application/json"  
+            "responseMimeType": "application/json"  
         }
     }
     
