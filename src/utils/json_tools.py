@@ -163,10 +163,11 @@ def parse_llm_json(text: str, return_default: bool = True) -> Union[Dict[str, An
     for candidate in attempts:
         try:
             parsed = json.loads(candidate)
-            # Asegurar estructura mínima esperada
+            if isinstance(parsed, list):
+                return parsed
             if isinstance(parsed, dict):
                 parsed.setdefault("errores", [])
-                parsed.setdefault("resumen", "Análisis completado")
+                parsed.setdefault("resumen", "Analisis completado")
                 parsed.setdefault("archivo", "desconocido")
             return parsed
         except json.JSONDecodeError:

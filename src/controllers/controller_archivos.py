@@ -48,6 +48,7 @@ def analizar_repositorio():
         # Llamar a Gemini
         salida = call_gemini(prompt)
 
+        open("/tmp/gemini_output.txt", "w").write(salida)
         # Parsear JSON de Gemini
         analisis = parse_llm_json(salida)
 
