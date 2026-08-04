@@ -4,7 +4,7 @@ import requests
 
 # 1. Configuramos las constantes (Sin la key en el string)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-MODEL_NAME = "gemini-2.0-flash"
+MODEL_NAME = "gemini-2.5-flash"
 # Usamos un f-string correcto para el modelo
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL_NAME}:generateContent"
 
